@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LifeBeep — Sound Detection Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta name="description" content="LifeBeep - Real-time sound detection system for hearing impaired individuals" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <!-- Animated watch SVG logo -->
+      <svg class="watch-logo" viewBox="0 0 64 64" width="32" height="32" aria-hidden="true">
+        <circle cx="32" cy="32" r="28" fill="var(--accent)" stroke="var(--accent-light)" stroke-width="2"/>
+        <circle cx="32" cy="32" r="18" fill="var(--bg)" />
+        <rect x="30" y="12" width="4" height="12" rx="2" fill="var(--accent)" class="watch-hand"/>
+        <circle cx="32" cy="32" r="4" fill="var(--accent-bright)" />
+      </svg>
+      <h1>LifeBeep</h1>
+      <span class="tagline">Sound Detection System</span>
+    </div>
+
+    <div class="center-conn">
+      <label for="serverIp">Server IP</label>
+      <input id="serverIp" type="text" placeholder="192.168.1.100" />
+      <button id="connectBtn" class="btn-connect">
+        <i class="fas fa-plug"></i> Connect
+      </button>
+      <span id="connStatus" class="status disconnected">
+        <span class="status-dot"></span>
+        Disconnected
+      </span>
+    </div>
+
+    <div class="actions">
+      <button id="helpBtn" class="icon-btn" title="Help & Documentation">
+        <i class="fas fa-question-circle"></i>
+      </button>
+      <button id="settingsBtn" class="icon-btn" title="Settings">
+        <i class="fas fa-cog"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="card card-level" id="levelCard">
+      <div class="card-header">
+        <i class="fas fa-volume-up card-icon"></i>
+        <h2>Sound Level</h2>
+      </div>
+      <div class="value" id="decLevel">0.0</div>
+      <div class="card-label">Decimal Value (0-5)</div>
+      <div class="level-bar">
+        <div class="level-fill" id="levelBar"></div>
+      </div>
+    </section>
+
+    <section class="card card-temp" id="tempCard">
+      <div class="card-header">
+        <i class="fas fa-temperature-high card-icon"></i>
+        <h2>Environment</h2>
+      </div>
+      <div class="value" id="temperature">--°C</div>
+      <div class="sub-metric">
+        <i class="fas fa-droplet"></i>
+        <span>Humidity: <span id="humidity">--%</span></span>
+      </div>
+    </section>
+
+    <section class="card card-logs" id="logCard">
+      <div class="card-header">
+        <i class="fas fa-list card-icon"></i>
+        <h2>Event Log</h2>
+        <button id="clearLogs" class="btn-clear" title="Clear all logs">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+      <div id="logs" class="logs"></div>
+      <div class="log-count">Total events: <span id="logCount">0</span></div>
+    </section>
+
+    <section class="card card-graph" id="graphCard">
+      <div class="card-header">
+        <i class="fas fa-chart-line card-icon"></i>
+        <h2>Realtime Graph</h2>
+        <span class="live-indicator">
+          <span class="live-dot"></span> LIVE
+        </span>
+      </div>
+      <canvas id="chart"></canvas>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-section">
+      <div class="footer-title">Guided By</div>
+      <div class="footer-content">
+        <i class="fas fa-user-tie"></i> DR.T.SENTIL KUMAR <br>
+        <i class="fas fa-user-tie"></i> DR.V.MARISELVAM
+      </div>
+    </div>
+    
+    <div class="footer-section">
+      <div class="footer-title">Project Done By</div>
+      <div class="footer-content footer-team">
+        <strong>H-4 Hypers</strong>
+      </div>
+    </div>
+    
+    <div class="footer-section">
+      <div class="footer-title">Contact</div>
+      <div class="footer-content">
+        <i class="fas fa-envelope"></i> <a href="mailto:lifebeeph4@gmail.com">lifebeeph4@gmail.com</a><br>
+        <i class="fas fa-phone"></i> +91 7845693765
+      </div>
+    </div>
+    
+    <div class="footer-section footer-copyright">
+      <div class="footer-content">
+        © 2025 LifeBeep. All rights reserved.<br>
+        Empowering the hearing impaired 💙
+      </div>
+    </div>
+  </footer>
+
+  <!-- Help Modal -->
+  <div id="helpModal" class="modal" aria-hidden="true">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h3><i class="fas fa-question-circle"></i> Help & Documentation</h3>
+        <button class="close-modal" id="closeHelp">&times;</button>
+      </div>
+      <div class="modal-body help-section">
+        <h4><i class="fas fa-rocket"></i> Quick Start</h4>
+        <ol>
+          <li><strong>Set Server IP:</strong> Enter the IP address of the machine running the Node.js server (e.g., <code>192.168.1.100</code>)</li>
+          <li><strong>Click Connect:</strong> Establish connection to the server</li>
+          <li><strong>Configure ESP32:</strong> Update <code>serverIP</code> in ESP32 code to match your server IP</li>
+          <li><strong>Upload Code:</strong> Flash the ESP32 with the provided <code>ESP32_code.ino</code> file</li>
+        </ol>
+
+        <h4><i class="fas fa-microchip"></i> ESP32 Setup</h4>
+        <p><strong>Required Components:</strong></p>
+        <ul>
+          <li>ESP32 Development Board</li>
+          <li>Sound Sensor (Analog) → GPIO 34</li>
+          <li>DHT11 Sensor → GPIO 5</li>
+          <li>OLED Display (SSD1306) → I2C (GPIO 21/22)</li>
+          <li>LED → GPIO 25, Buzzer → GPIO 26, Vibration Motor → GPIO 27</li>
+        </ul>
+
+        <h4><i class="fas fa-server"></i> Email Notification Setup</h4>
+        <p><strong>Get Gmail App Password (5 steps):</strong></p>
+        <ol class="setup-steps">
+          <li>Go to <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer">Google Account Security</a></li>
+          <li>Enable <strong>2-Step Verification</strong></li>
+          <li>Click <strong>App passwords</strong> → Select <strong>Mail</strong></li>
+          <li>Generate password (16 characters: xxxx xxxx xxxx xxxx)</li>
+          <li>Copy password and paste in <code>.env</code> file (remove spaces)</li>
+        </ol>
+        
+        <p><strong>Create <code>.env</code> file in project root:</strong></p>
+        <pre class="env-example">SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=abcdefghijklmnop
+EMAIL_FROM=your_email@gmail.com
+EMAIL_TO=doctor@hospital.com,family@example.com</pre>
+        
+        <p class="security-warning">
+          ⚠️ NEVER commit <code>.env</code> to GitHub! It's in <code>.gitignore</code> for your security.
+        </p>
+
+        <h4><i class="fas fa-chart-line"></i> Dashboard Features</h4>
+        <ul>
+          <li><strong>Sound Level Card:</strong> Real-time decimal sound level (0-5 scale)</li>
+          <li><strong>Environment Card:</strong> Temperature and humidity readings</li>
+          <li><strong>Event Log:</strong> Chronological list of all notifications</li>
+          <li><strong>Graph:</strong> 30-sample rolling window visualization</li>
+        </ul>
+
+        <h4><i class="fas fa-download"></i> Download ESP32 Code</h4>
+        <p>The complete ESP32 firmware code is available in the root directory:</p>
+        <button onclick="downloadESP32Code()" class="download-btn">
+          <i class="fas fa-download"></i> Download ESP32_code.ino
+        </button>
+
+        <h4><i class="fas fa-book"></i> More Information</h4>
+        <p>For detailed documentation, troubleshooting, and API reference, see the <code>README.md</code> file in the project root.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-cog"></i> Settings</h3>
+        <button class="close-modal" id="closeSettings">&times;</button>
+      </div>
+      <div class="modal-body settings-section">
+        <h4><i class="fas fa-palette"></i> Appearance</h4>
+        <div class="theme-toggle-container">
+          <label class="theme-toggle">
+            <input type="checkbox" id="themeToggle">
+            <div class="toggle-slider"></div>
+            <span class="theme-label">
+              <span class="theme-dark"><i class="fas fa-moon"></i> Dark Mode</span>
+              <span class="theme-light"><i class="fas fa-sun"></i> Light Mode</span>
+            </span>
+          </label>
+        </div>
+
+        <h4><i class="fas fa-bell"></i> Notifications</h4>
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="soundAlerts" checked>
+            <span>Enable sound alerts</span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="emailAlerts" checked>
+            <span>Enable email notifications (configure SMTP in server)</span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <button onclick="sendTestNotification()" class="test-notification-btn">
+            <i class="fas fa-paper-plane"></i> Send Test Notification
+          </button>
+          <small class="setting-note">Sends test email to all 4 configured recipients</small>
+        </div>
+
+        <h4><i class="fas fa-sync-alt"></i> Data Refresh</h4>
+        <div class="setting-item">
+          <label for="refreshRate">Refresh interval (seconds):</label>
+          <input type="number" id="refreshRate" min="1" max="60" value="3" class="setting-input">
+          <small class="setting-note">Lower values = more frequent updates, higher CPU usage</small>
+        </div>
+
+        <button onclick="saveSettings()" class="submit-btn save-settings-btn">
+          <i class="fas fa-save"></i> Save Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/email-config.js"></script>
+  <script src="/email-sender.js"></script>
+  <script src="/static/script.js"></script>
+</body>
+</html>
