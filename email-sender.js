@@ -100,5 +100,150 @@ async function sendTestEmailDirect() {
   }
 }
 
+// ============================================
+// REAL SOUND DETECTION EMAIL (Not a test)
+// ============================================
+async function sendSoundDetectionEmail(soundLevel, temperature, humidity) {
+  const config = typeof EMAIL_CONFIG !== 'undefined' ? EMAIL_CONFIG : null;
+  
+  if (!config || !config.emailjs.enabled) {
+    console.error('❌ EmailJS not configured');
+    return { success: false };
+  }
+  
+  try {
+    emailjs.init(config.emailjs.publicKey);
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🚨 REAL SOUND DETECTION ALERT - Sending emails...');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    const responses = [];
+    
+    for (let i = 0; i < config.recipients.receivers.length; i++) {
+      const receiverEmail = config.recipients.receivers[i];
+      
+      console.log(`📤 Alerting: ${receiverEmail}...`);
+      
+      const templateParams = {
+        to_email: receiverEmail,
+        to_name: receiverEmail.split('@')[0],
+        from_name: config.template.from_name,
+        subject: '🚨 ALERT: High Sound Detected!',
+        message: `URGENT ALERT: High sound level detected by your LifeBeep device!\n\nImmediate action may be required.\n\nDetected on: ${new Date().toLocaleString()}`,
+        timestamp: new Date().toLocaleString(),
+        system_status: '🚨 Sound Detected',
+        alert_type: 'Real-Time Sound Alert',
+        sender_email: config.recipients.sender,
+        sound_level: soundLevel.toFixed(1),
+        temperature: temperature.toFixed(1) + '°C',
+        humidity: humidity.toFixed(1) + '%',
+        recipient_email: receiverEmail,
+        recipient_name: receiverEmail.split('@')[0]
+      };
+      
+      try {
+        const response = await emailjs.send(
+          config.emailjs.serviceId,
+          config.emailjs.templateId,
+          templateParams
+        );
+        responses.push({ email: receiverEmail, status: response.status, success: true });
+        console.log(`  ✅ Alert sent to ${receiverEmail}`);
+        
+        if (i < config.recipients.receivers.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (emailError) {
+        console.error(`  ❌ Failed to alert ${receiverEmail}:`, emailError);
+        responses.push({ email: receiverEmail, status: 'failed', success: false });
+      }
+    }
+    
+    const successCount = responses.filter(r => r.success).length;
+    console.log(`\n🚨 ALERT SUMMARY: ${successCount}/${responses.length} recipients notified`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    return { success: successCount > 0, responses, successCount, totalCount: responses.length };
+    
+  } catch (error) {
+    console.error('❌ Sound detection email failed:', error);
+    return { success: false, error };
+  }
+}
+
+// ============================================
+// REAL SOUND DETECTION EMAIL (Not a test!)
+// ============================================
+async function sendSoundDetectionEmail(soundLevel, temperature, humidity) {
+  const config = typeof EMAIL_CONFIG !== 'undefined' ? EMAIL_CONFIG : null;
+  
+  if (!config || !config.emailjs.enabled) {
+    console.error('❌ EmailJS not configured');
+    return { success: false };
+  }
+  
+  try {
+    emailjs.init(config.emailjs.publicKey);
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🚨 REAL SOUND ALERT - Sending notifications...');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    const responses = [];
+    
+    for (let i = 0; i < config.recipients.receivers.length; i++) {
+      const receiverEmail = config.recipients.receivers[i];
+      
+      console.log(`📤 Alerting: ${receiverEmail}...`);
+      
+      const templateParams = {
+        to_email: receiverEmail,
+        to_name: receiverEmail.split('@')[0],
+        from_name: config.template.from_name,
+        subject: '🚨 ALERT: High Sound Detected!',
+        message: `URGENT ALERT: High sound level detected by your LifeBeep device!\\n\\nImmediate attention may be required.\\n\\nDetected at: ${new Date().toLocaleString()}`,
+        timestamp: new Date().toLocaleString(),
+        system_status: '🚨 High Sound Detected',
+        alert_type: 'Real-Time Sound Detection',
+        sender_email: config.recipients.sender,
+        sound_level: soundLevel.toFixed(1),
+        temperature: temperature.toFixed(1) + '°C',
+        humidity: humidity.toFixed(1) + '%',
+        recipient_email: receiverEmail,
+        recipient_name: receiverEmail.split('@')[0]
+      };
+      
+      try {
+        const response = await emailjs.send(
+          config.emailjs.serviceId,
+          config.emailjs.templateId,
+          templateParams
+        );
+        responses.push({ email: receiverEmail, status: response.status, success: true });
+        console.log(`  ✅ Alert sent to ${receiverEmail}`);        
+        if (i < config.recipients.receivers.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (emailError) {
+        console.error(`  ❌ Failed: ${receiverEmail}:`, emailError);
+        responses.push({ email: receiverEmail, status: 'failed', success: false });
+      }
+    }
+    
+    const successCount = responses.filter(r => r.success).length;
+    console.log(`\\n🚨 RESULT: ${successCount}/${responses.length} recipients alerted`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    return { success: successCount > 0, responses, successCount, totalCount: responses.length };
+    
+  } catch (error) {
+    console.error('❌ Sound alert failed:', error);
+    return { success: false, error };
+  }
+}
+
 // Expose globally
 window.sendTestEmailDirect = sendTestEmailDirect;
+window.sendSoundDetectionEmail = sendSoundDetectionEmail;
+window.sendSoundDetectionEmail = sendSoundDetectionEmail;

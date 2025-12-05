@@ -114,14 +114,17 @@ function initializeConnection() {
         serverIp = ip;
         localStorage.setItem('lifebeep_server', serverIp);
         
+        // Stop simulated data - use only real ESP32 data
+        stopSimulatedData();
+        
         connStatus.classList.remove('disconnected');
         connStatus.classList.add('connected');
         connStatus.innerHTML = '<span class="status-dot"></span> Connected';
         
-        showNotification(`Connected to ESP32 at ${serverIp}`, 'success');
-        console.log(`✓ Connected to ESP32: ${serverIp}`);
+        showNotification(`✅ ESP32 Connected - Real data mode`, 'success');
+        console.log(`✓ ESP32 Connected at ${serverIp} - Simulated data stopped`);
         
-        // Start polling ESP32 for smart email notifications
+        // Start polling ESP32 for real-time data and smart email notifications
         startESP32Polling();
     });
 }
@@ -696,24 +699,25 @@ async function pollESP32Data() {
         
         // SMART DETECTION: Check if status changed from Normal to Detected AND notification not sent yet
         if (data.status === "Detected" && lastStatus === "Normal" && data.notificationSent === false) {
-            console.log(`🚨 INSTANT ALERT! Sound level ${data.soundLevel} exceeded threshold ${data.threshold}! Sending email NOW...`);
+            console.log(`🚨 REAL SOUND ALERT! Level ${data.soundLevel} exceeded threshold ${data.threshold}!`);
             
-            // Send email notification via EmailJS IMMEDIATELY
+            // Send REAL sound detection email with actual sensor data (NOT A TEST)
             try {
-                await sendTestEmailDirect();
-                console.log('✅ Email sent successfully for this detection!');
-                showNotification('🚨 High sound detected! Email sent to all recipients.', 'error');
+                await sendSoundDetectionEmail(level, temp, hum);
+                console.log('✅ Real-time alert emails sent successfully!');
+                showNotification('🚨 HIGH SOUND DETECTED! Alerts sent to all recipients.', 'error');
             } catch (emailError) {
-                console.error('❌ Email failed:', emailError);
-                showNotification('⚠️ Sound detected but email failed to send', 'error');
+                console.error('❌ Alert email failed:', emailError);
+                showNotification('⚠️ Sound detected but alerts failed to send', 'error');
             }
         }
         
         lastStatus = data.status; // Update tracked status
         
     } catch (error) {
-        console.warn('ESP32 polling error:', error.message);
-        // Fall back to simulated data if ESP32 not available
+        console.warn('⚠️ ESP32 connection lost:', error.message);
+        showNotification('ESP32 disconnected. Check connection.', 'error');
+        // DO NOT fall back to simulated data - show connection error instead
     } finally {
         isPolling = false;
     }
@@ -726,11 +730,16 @@ function startESP32Polling() {
 }
 
 // ===================================
-// SIMULATED DATA (FOR TESTING)
+// SIMULATED DATA (FOR TESTING ONLY)
 // ===================================
+let simulatedDataInterval = null;
+
 function startSimulatedData() {
-    setInterval(() => {
-        // Generate random values
+    // Only start if not already running and no ESP32 connected
+    if (simulatedDataInterval || serverIp) return;
+    
+    simulatedDataInterval = setInterval(() => {
+        // Generate random values ONLY FOR TESTING
         const level = Math.random() * 5; // 0-5 scale
         const temp = 22 + Math.random() * 6; // 22-28°C
         const hum = 40 + Math.random() * 30; // 40-70%
@@ -738,7 +747,15 @@ function startSimulatedData() {
         pushSample(level, temp, hum);
     }, 3000); // Every 3 seconds
     
-    console.log('✓ Simulated data started (every 3s)');
+    console.log('⚠️ Simulated data started (testing mode - connect ESP32 for real data)');
+}
+
+function stopSimulatedData() {
+    if (simulatedDataInterval) {
+        clearInterval(simulatedDataInterval);
+        simulatedDataInterval = null;
+        console.log('✓ Simulated data stopped - Using real ESP32 data now');
+    }
 }
 
 // ===================================
@@ -790,7 +807,7 @@ console.log('%c🎯 LifeBeep Dashboard', 'color: #00d4ff; font-size: 24px; font-
 console.log('%cSound Detection System for Hearing Impaired', 'color: #9aa4b2; font-size: 14px;');
 console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #00d4ff;');
 console.log('Version: 1.0');
-console.log('Guided by: Dr. T. Sindal Kumar & Dr. Mari Selvam');
+console.log('Guided by: Dr. T. Senthil Kumar & Dr. Mari Selvam');
 console.log('Developed by: H-4 Hypers');
 console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #00d4ff;');
 console.log('📡 Server IP: Set via UI');
