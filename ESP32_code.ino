@@ -56,6 +56,8 @@ float currentTemperature = -99.9;
 float currentHumidity = -99.9;
 int currentSoundLevel = 0;
 String currentStatus = "Normal"; // "Normal" or "Detected"
+bool notificationSent = false; // Track if notification already sent
+unsigned long detectionTimestamp = 0; // When sound was detected
 
 // --- U8g2 Constructor ---
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
@@ -198,6 +200,8 @@ void loop(void) {
     Serial.println(currentSoundLevel);
     
     currentStatus = "Detected"; // Update status for web server
+    notificationSent = false; // Reset flag for new detection
+    detectionTimestamp = currentTime; // Record exact detection time
     
     // Start the 10-second alert
     isAlertActive = true;
@@ -229,6 +233,7 @@ void loop(void) {
       Serial.println("Alert finished. Resetting.");
       isAlertActive = false;
       currentStatus = "Normal"; // Reset status
+      notificationSent = false; // Reset for next detection
       digitalWrite(LED_PIN, LOW);
     }
     
@@ -290,8 +295,15 @@ void handleData() {
   json += "\"soundLevel\":" + String(currentSoundLevel) + ",";
   json += "\"temperature\":" + String(currentTemperature, 1) + ",";
   json += "\"humidity\":" + String(currentHumidity, 1) + ",";
-  json += "\"threshold\":" + String(SOUND_THRESHOLD);
+  json += "\"threshold\":" + String(SOUND_THRESHOLD) + ",";
+  json += "\"notificationSent\":" + String(notificationSent ? "true" : "false") + ",";
+  json += "\"detectionTime\":" + String(detectionTimestamp);
   json += "}";
+  
+  // Mark notification as sent after first API call during alert
+  if (currentStatus == "Detected" && !notificationSent) {
+    notificationSent = true;
+  }
   
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", json);

@@ -696,7 +696,7 @@ async function pollESP32Data() {
         
         // SMART DETECTION: Check if status changed from Normal to Detected
         if (data.status === "Detected" && lastStatus === "Normal") {
-            console.log('🚨 Sound Detected! Sending email notification...');
+            console.log(`🚨 INSTANT ALERT! Sound level ${data.soundLevel} exceeded threshold ${data.threshold}! Sending email...`);
             
             // Send email notification via EmailJS
             await sendTestEmailDirect();
@@ -714,10 +714,10 @@ async function pollESP32Data() {
     }
 }
 
-// Start polling ESP32 every 2 seconds
+// Start polling ESP32 every 500ms for instant detection
 function startESP32Polling() {
-    setInterval(pollESP32Data, 2000); // Poll every 2 seconds
-    console.log('✓ ESP32 polling started (every 2s with smart email notifications)');
+    setInterval(pollESP32Data, 500); // Poll every 500ms (0.5 seconds) for real-time response
+    console.log('✓ ESP32 polling started (every 0.5s with instant email notifications)');
 }
 
 // ===================================
