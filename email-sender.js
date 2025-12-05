@@ -30,8 +30,18 @@ async function sendTestEmailDirect() {
     emailjs.init(config.emailjs.publicKey);
     console.log('✓ EmailJS initialized');
     
-    // Send to all receivers
-    const emailPromises = config.recipients.receivers.map(async (receiverEmail) => {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📧 Sending individual emails to each recipient...');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    const responses = [];
+    
+    // Send emails sequentially (one at a time) to avoid rate limits
+    for (let i = 0; i < config.recipients.receivers.length; i++) {
+      const receiverEmail = config.recipients.receivers[i];
+      
+      console.log(`📤 Sending to: ${receiverEmail}...`);
+      
       const templateParams = {
         to_email: receiverEmail,
         to_name: receiverEmail.split('@')[0],
@@ -39,36 +49,50 @@ async function sendTestEmailDirect() {
         subject: config.template.subject,
         message: config.template.test_message + `\n\nSent on: ${new Date().toLocaleString()}`,
         timestamp: new Date().toLocaleString(),
-        system_status: 'Email System Active',
-        alert_type: 'Test Notification',
+        system_status: 'Sound Detection Alert',
+        alert_type: 'High Sound Detected',
         sender_email: config.recipients.sender,
         sound_level: '3.5',
         temperature: '25.5°C',
-        humidity: '60%'
+        humidity: '60%',
+        recipient_email: receiverEmail,  // Added for template flexibility
+        recipient_name: receiverEmail.split('@')[0]
       };
       
-      return emailjs.send(
-        config.emailjs.serviceId,
-        config.emailjs.templateId,
-        templateParams
-      );
-    });
-    
-    const responses = await Promise.all(emailPromises);
+      try {
+        const response = await emailjs.send(
+          config.emailjs.serviceId,
+          config.emailjs.templateId,
+          templateParams
+        );
+        responses.push({ email: receiverEmail, status: response.status, success: true });
+        console.log(`  ✅ Sent successfully to ${receiverEmail} (Status: ${response.status})`);
+        
+        // Small delay between emails to avoid rate limiting
+        if (i < config.recipients.receivers.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+        }
+      } catch (emailError) {
+        console.error(`  ❌ Failed to send to ${receiverEmail}:`, emailError);
+        responses.push({ email: receiverEmail, status: 'failed', success: false, error: emailError });
+      }
+    }
     
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('✅ ALL TEST EMAILS SENT SUCCESSFULLY!');
+    console.log('📊 EMAIL SENDING SUMMARY');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('From:', config.recipients.sender);
-    console.log('Sent to:');
-    config.recipients.receivers.forEach((email, i) => {
-      console.log(`  ${i + 1}. ${email} - Status: ${responses[i].status}`);
+    console.log('Results:');
+    responses.forEach((result, i) => {
+      const icon = result.success ? '✅' : '❌';
+      console.log(`  ${icon} ${i + 1}. ${result.email} - ${result.success ? 'Sent' : 'Failed'}`);
     });
+    const successCount = responses.filter(r => r.success).length;
+    console.log(`\nTotal: ${successCount}/${responses.length} emails sent successfully`);
     console.log('Time:', new Date().toLocaleString());
-    console.log('Total emails sent:', responses.length);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
-    return { success: true, responses };
+    return { success: successCount > 0, responses, successCount, totalCount: responses.length };
     
   } catch (error) {
     console.error('❌ Email sending failed:', error);
