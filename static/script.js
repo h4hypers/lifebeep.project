@@ -694,14 +694,19 @@ async function pollESP32Data() {
         
         pushSample(level, temp, hum);
         
-        // SMART DETECTION: Check if status changed from Normal to Detected
-        if (data.status === "Detected" && lastStatus === "Normal") {
-            console.log(`🚨 INSTANT ALERT! Sound level ${data.soundLevel} exceeded threshold ${data.threshold}! Sending email...`);
+        // SMART DETECTION: Check if status changed from Normal to Detected AND notification not sent yet
+        if (data.status === "Detected" && lastStatus === "Normal" && data.notificationSent === false) {
+            console.log(`🚨 INSTANT ALERT! Sound level ${data.soundLevel} exceeded threshold ${data.threshold}! Sending email NOW...`);
             
-            // Send email notification via EmailJS
-            await sendTestEmailDirect();
-            
-            showNotification('🚨 High sound detected! Email sent to all recipients.', 'error');
+            // Send email notification via EmailJS IMMEDIATELY
+            try {
+                await sendTestEmailDirect();
+                console.log('✅ Email sent successfully for this detection!');
+                showNotification('🚨 High sound detected! Email sent to all recipients.', 'error');
+            } catch (emailError) {
+                console.error('❌ Email failed:', emailError);
+                showNotification('⚠️ Sound detected but email failed to send', 'error');
+            }
         }
         
         lastStatus = data.status; // Update tracked status

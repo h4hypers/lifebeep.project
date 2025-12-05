@@ -93,6 +93,8 @@ const long TEMP_READ_INTERVAL = 500; // Read temp every 0.5 seconds (real-time u
 // --- Function Prototypes ---
 void displayTime();
 void displayTemp();
+void displayIPAddress();
+void displayBranding();
 void drawEyesOpen(EyeDirection direction); 
 void drawBlink();
 void drawWarning();
@@ -217,6 +219,8 @@ void loop(void) {
   u8g2.clearBuffer();
   displayTime();
   displayTemp();
+  displayBranding();  // Show "LifeBeep" bottom-left
+  displayIPAddress(); // Show IP address bottom-right
 
   if (isAlertActive) {
     // --- STATE: ALERT ---
@@ -338,6 +342,28 @@ void displayTemp() {
     int x = u8g2.getWidth() - u8g2.getStrWidth(tempStr.c_str()) - 1;
     int y = 7;
     u8g2.drawStr(x, y, tempStr.c_str());
+}
+
+void displayIPAddress() {
+    u8g2.setDrawColor(1);
+    u8g2.setFont(u8g2_font_4x6_tf); // Small font for IP
+    
+    if (WiFi.status() == WL_CONNECTED) {
+      String ipStr = WiFi.localIP().toString();
+      int x = u8g2.getWidth() - u8g2.getStrWidth(ipStr.c_str()) - 1; // Bottom-right
+      int y = u8g2.getHeight() - 1; // Bottom edge
+      u8g2.drawStr(x, y, ipStr.c_str());
+    }
+}
+
+void displayBranding() {
+    u8g2.setDrawColor(1);
+    u8g2.setFont(u8g2_font_4x6_tf); // Small font for branding
+    
+    const char* brand = "LifeBeep";
+    int x = 1; // Bottom-left corner
+    int y = u8g2.getHeight() - 1; // Bottom edge
+    u8g2.drawStr(x, y, brand);
 }
 
 void lookAround(EyeDirection direction) {
