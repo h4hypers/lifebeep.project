@@ -714,10 +714,10 @@ async function pollESP32Data() {
     }
 }
 
-// Start polling ESP32 every 500ms for instant detection
+// Start polling ESP32 every 300ms for Serial Monitor speed
 function startESP32Polling() {
-    setInterval(pollESP32Data, 500); // Poll every 500ms (0.5 seconds) for real-time response
-    console.log('✓ ESP32 polling started (every 0.5s with instant email notifications)');
+    setInterval(pollESP32Data, 300); // Poll every 300ms (0.3 seconds) for real-time Serial Monitor speed
+    console.log('✓ ESP32 polling started (every 0.3s - Serial Monitor speed with instant notifications)');
 }
 
 // ===================================

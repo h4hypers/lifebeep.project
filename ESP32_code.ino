@@ -88,7 +88,7 @@ EyeDirection currentEyeDirection = CENTER;
 
 // --- SENSOR READING TIMERS ---
 unsigned long lastTempReadTime = 0;
-const long TEMP_READ_INTERVAL = 5000; // Read temp every 5 seconds
+const long TEMP_READ_INTERVAL = 500; // Read temp every 0.5 seconds (real-time updates)
 
 // --- Function Prototypes ---
 void displayTime();
