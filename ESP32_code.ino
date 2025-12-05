@@ -361,7 +361,7 @@ void displayBranding() {
     u8g2.setFont(u8g2_font_4x6_tf); // Small font for branding
     
     const char* brand = "LifeBeep";
-    int x = 1; // Bottom-left corner
+    int x = 3; // Slightly right so "L" is visible
     int y = u8g2.getHeight() - 1; // Bottom edge
     u8g2.drawStr(x, y, brand);
 }
