@@ -118,8 +118,11 @@ function initializeConnection() {
         connStatus.classList.add('connected');
         connStatus.innerHTML = '<span class="status-dot"></span> Connected';
         
-        showNotification(`Connected to ${serverIp}:5000`, 'success');
-        console.log(`✓ Connected to server: ${serverIp}`);
+        showNotification(`Connected to ESP32 at ${serverIp}`, 'success');
+        console.log(`✓ Connected to ESP32: ${serverIp}`);
+        
+        // Start polling ESP32 for smart email notifications
+        startESP32Polling();
     });
 }
 
@@ -664,6 +667,60 @@ async function sendTestNotification() {
 window.sendTestNotification = sendTestNotification;
 
 // ===================================
+// ESP32 DATA POLLING (SMART MONITORING)
+// ===================================
+let lastStatus = "Normal"; // Track previous status
+let isPolling = false;
+
+async function pollESP32Data() {
+    if (!serverIp || isPolling) return;
+    
+    isPolling = true;
+    
+    try {
+        const response = await fetch(`http://${serverIp}/data`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        if (!response.ok) throw new Error('ESP32 not responding');
+        
+        const data = await response.json();
+        
+        // Update dashboard with ESP32 data
+        const level = data.soundLevel / 819; // Convert ADC (0-4095) to 0-5 scale
+        const temp = data.temperature;
+        const hum = data.humidity;
+        
+        pushSample(level, temp, hum);
+        
+        // SMART DETECTION: Check if status changed from Normal to Detected
+        if (data.status === "Detected" && lastStatus === "Normal") {
+            console.log('🚨 Sound Detected! Sending email notification...');
+            
+            // Send email notification via EmailJS
+            await sendTestEmailDirect();
+            
+            showNotification('🚨 High sound detected! Email sent to all recipients.', 'error');
+        }
+        
+        lastStatus = data.status; // Update tracked status
+        
+    } catch (error) {
+        console.warn('ESP32 polling error:', error.message);
+        // Fall back to simulated data if ESP32 not available
+    } finally {
+        isPolling = false;
+    }
+}
+
+// Start polling ESP32 every 2 seconds
+function startESP32Polling() {
+    setInterval(pollESP32Data, 2000); // Poll every 2 seconds
+    console.log('✓ ESP32 polling started (every 2s with smart email notifications)');
+}
+
+// ===================================
 // SIMULATED DATA (FOR TESTING)
 // ===================================
 function startSimulatedData() {
@@ -674,24 +731,9 @@ function startSimulatedData() {
         const hum = 40 + Math.random() * 30; // 40-70%
         
         pushSample(level, temp, hum);
-        
-        // Automatically send notification to server when sound detected
-        // Determine alert level based on sound level
-        let alertLevel = 'Low';
-        if (level > 4) alertLevel = 'High';
-        else if (level > 3) alertLevel = 'Medium';
-        
-        // Send to server (will trigger email for High alerts)
-        if (serverIp) {
-            sendNotification({
-                level: alertLevel,
-                temperature: temp,
-                humidity: hum
-            });
-        }
     }, 3000); // Every 3 seconds
     
-    console.log('✓ Simulated data started (every 3s with auto-notifications)');
+    console.log('✓ Simulated data started (every 3s)');
 }
 
 // ===================================
