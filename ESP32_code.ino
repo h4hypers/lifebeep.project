@@ -219,8 +219,12 @@ void loop(void) {
   u8g2.clearBuffer();
   displayTime();
   displayTemp();
-  displayBranding();  // Show "LifeBeep" bottom-left
-  displayIPAddress(); // Show IP address bottom-right
+  
+  // Only show branding and IP when NOT in alert mode (prevents collision with WARNING text)
+  if (!isAlertActive) {
+    displayBranding();  // Show "LifeBeep" bottom-left
+    displayIPAddress(); // Show IP address bottom-right
+  }
 
   if (isAlertActive) {
     // --- STATE: ALERT ---
