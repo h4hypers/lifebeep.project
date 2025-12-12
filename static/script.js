@@ -674,6 +674,8 @@ window.sendTestNotification = sendTestNotification;
 // ===================================
 let lastStatus = "Normal"; // Track previous status
 let isPolling = false;
+let consecutiveErrors = 0; // Track connection failures
+let isConnected = true; // Track connection state
 
 async function pollESP32Data() {
     if (!serverIp || isPolling) return;
@@ -683,12 +685,23 @@ async function pollESP32Data() {
     try {
         const response = await fetch(`http://${serverIp}/data`, {
             method: 'GET',
-            headers: { 'Accept': 'application/json' }
+            headers: { 'Accept': 'application/json' },
+            timeout: 2000 // 2 second timeout
         });
         
         if (!response.ok) throw new Error('ESP32 not responding');
         
         const data = await response.json();
+        
+        // Reset error counter on successful connection
+        if (consecutiveErrors > 0) {
+            consecutiveErrors = 0;
+            if (!isConnected) {
+                isConnected = true;
+                showNotification('✅ ESP32 reconnected!', 'success');
+                console.log('✓ ESP32 connection restored');
+            }
+        }
         
         // Update dashboard with ESP32 data
         const level = data.soundLevel / 819; // Convert ADC (0-4095) to 0-5 scale
@@ -715,9 +728,17 @@ async function pollESP32Data() {
         lastStatus = data.status; // Update tracked status
         
     } catch (error) {
-        console.warn('⚠️ ESP32 connection lost:', error.message);
-        showNotification('ESP32 disconnected. Check connection.', 'error');
-        // DO NOT fall back to simulated data - show connection error instead
+        consecutiveErrors++;
+        
+        // Only show error notification after 5 consecutive failures (1.5 seconds of failures)
+        if (consecutiveErrors === 5 && isConnected) {
+            isConnected = false;
+            console.error('❌ ESP32 connection lost after 5 failed attempts');
+            showNotification('⚠️ ESP32 connection lost. Check WiFi/IP address.', 'error');
+        } else if (consecutiveErrors < 5) {
+            // Just log, don't show notification for occasional hiccups
+            console.warn(`⚠️ ESP32 poll failed (${consecutiveErrors}/5):`, error.message);
+        }
     } finally {
         isPolling = false;
     }
